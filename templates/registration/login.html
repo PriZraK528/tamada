@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Вход — TamaDa{% endblock %}
+{% block content %}
+  <h1>Вход</h1>
+  <p class="lead">Войдите, чтобы создавать события и записываться на них.</p>
+  <section class="card" style="max-width: 420px">
+    <form method="post" action="{% url 'login' %}">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <ul class="errorlist">{% for err in form.non_field_errors %}<li>{{ err }}</li>{% endfor %}</ul>
+      {% endif %}
+      {% for field in form %}
+        <p>
+          {{ field.label_tag }}
+          {{ field }}
+          {% if field.errors %}<ul class="errorlist">{% for err in field.errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
+        </p>
+      {% endfor %}
+      {% if request.GET.next %}
+        <input type="hidden" name="next" value="{{ request.GET.next }}" />
+      {% endif %}
+      <button class="btn btn-primary" type="submit">Войти</button>
+    </form>
+    <p class="muted" style="margin: 1rem 0 0; font-size: 0.9rem">Нет аккаунта? <a href="{% url 'signup' %}">Зарегистрироваться</a></p>
+  </section>
+{% endblock %}

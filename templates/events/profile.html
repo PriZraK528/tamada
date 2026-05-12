@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Профиль — TamaDa{% endblock %}
+{% block content %}
+  <h1>Профиль</h1>
+  <p class="lead">{{ user.username }}{% if user.get_full_name %} · {{ user.get_full_name }}{% endif %}{% if user.email %} · {{ user.email }}{% endif %}</p>
+
+  <div class="profile-actions">
+    <span class="muted" style="margin: 0; flex: 1; min-width: 8rem">Сессия</span>
+    <form method="post" action="{% url 'logout' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn">Выйти из аккаунта</button>
+    </form>
+  </div>
+
+  <div class="profile-grid">
+    <section class="card profile-panel">
+      <h2 class="profile-panel-title">Мои события</h2>
+      <p class="muted" style="margin: 0 0 1rem; font-size: 0.9rem">События, которые вы создали.</p>
+      <p style="margin: 0 0 1rem"><a class="btn btn-primary" href="{% url 'event_create' %}">Создать событие</a></p>
+      {% if organized_events %}
+        <ul class="profile-list">
+          {% for e in organized_events %}
+            <li class="profile-list-item">
+              <a href="{% url 'event_detail' e.pk %}">{{ e.title }}</a>
+              <span class="meta">
+                {{ e.starts_at|date:"d.m.Y H:i" }}
+                {% if not e.is_public %}· не публичное{% endif %}
+                {% if e.registrations_count is not None %}· {{ e.registrations_count }}{% if e.capacity is not None %}/{{ e.capacity }}{% endif %} участников{% endif %}
+              </span>
+              <span class="profile-list-actions"><a class="btn" href="{% url 'event_edit' e.pk %}">Изменить</a></span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="muted" style="margin: 0">Вы ещё не создали ни одного события.</p>
+      {% endif %}
+    </section>
+
+    <section class="card profile-panel">
+      <h2 class="profile-panel-title">Участвую</h2>
+      <p class="muted" style="margin: 0 0 1rem; font-size: 0.9rem">События, на которые вы записаны.</p>
+      {% if attending_registrations %}
+        <ul class="profile-list">
+          {% for r in attending_registrations %}
+            <li class="profile-list-item">
+              <a href="{% url 'event_detail' r.event.pk %}">{{ r.event.title }}</a>
+              <span class="meta">
+                {{ r.event.starts_at|date:"d.m.Y H:i" }}{% if r.event.location %} · {{ r.event.location }}{% endif %}
+              </span>
+              {% if r.comment %}<span class="muted" style="font-size: 0.85rem; display: block; margin-top: 0.25rem">{{ r.comment }}</span>{% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="muted" style="margin: 0">Пока нет записей на чужие события.</p>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}

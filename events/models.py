@@ -1,6 +1,15 @@
+from django.conf import settings
 from django.db import models
 
+User = settings.AUTH_USER_MODEL
+
+
 class Event(models.Model):
+    organizer = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="organized_events",
+    )
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     location = models.CharField(max_length=255, blank=True)
@@ -21,8 +30,11 @@ class Event(models.Model):
 
 class Registration(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="registrations")
-    name = models.CharField(max_length=200)
-    email = models.EmailField()
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="event_registrations",
+    )
     comment = models.TextField(blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -31,10 +43,10 @@ class Registration(models.Model):
         ordering = ["-created_at", "id"]
         constraints = [
             models.UniqueConstraint(
-                fields=["event", "email"],
-                name="uniq_registration_event_email",
+                fields=["event", "user"],
+                name="uniq_registration_event_user",
             ),
         ]
 
     def __str__(self) -> str:
-        return f"{self.email} -> {self.event_id}"
+        return f"{self.user_id} -> {self.event_id}"

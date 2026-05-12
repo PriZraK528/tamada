@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}События — Tamada{% endblock %}
+{% block title %}События — TamaDa{% endblock %}
 {% block content %}
   <h1>События и встречи</h1>
   <p class="lead">Публичный каталог. Запись на странице события.</p>
@@ -11,6 +11,7 @@
           <p class="meta">
             {{ e.starts_at|date:"d.m.Y H:i" }}
             {% if e.location %}· {{ e.location }}{% endif %}
+            · организатор: {{ e.organizer.get_username }}
             {% if e.registrations_count is not None %}· записано: {{ e.registrations_count }}{% if e.capacity is not None %}/{{ e.capacity }}{% endif %}{% endif %}
           </p>
           {% if e.description %}

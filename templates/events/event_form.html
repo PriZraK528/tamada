@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ title_page }} — TamaDa{% endblock %}
+{% block content %}
+  <p class="muted" style="margin: 0 0 0.25rem"><a href="{% url 'event_list' %}">← События</a></p>
+  <h1>{{ title_page }}</h1>
+  {% if messages %}
+    <ul class="messages">
+      {% for message in messages %}
+        <li class="{{ message.tags }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+  <section class="card">
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <ul class="errorlist">{% for err in form.non_field_errors %}<li>{{ err }}</li>{% endfor %}</ul>
+      {% endif %}
+      {% for field in form %}
+        <p>
+          {{ field.label_tag }}
+          {{ field }}
+          {% if field.help_text %}<span class="muted" style="font-size: 0.8rem">{{ field.help_text }}</span>{% endif %}
+          {% if field.errors %}<ul class="errorlist">{% for err in field.errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
+        </p>
+      {% endfor %}
+      <button class="btn btn-primary" type="submit">Сохранить</button>
+    </form>
+  </section>
+{% endblock %}

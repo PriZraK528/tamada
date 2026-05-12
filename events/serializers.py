@@ -1,36 +1,63 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from .models import Event, Registration
 
+User = get_user_model()
 
-class RegistrationSerializer(serializers.ModelSerializer):
+
+class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, min_length=8, style={"input_type": "password"})
+    password_confirm = serializers.CharField(write_only=True, style={"input_type": "password"})
+
     class Meta:
-        model = Registration
-        fields = ["id", "event", "name", "email", "comment", "created_at"]
-        read_only_fields = ["id", "created_at"]
+        model = User
+        fields = ["username", "password", "password_confirm", "email", "first_name", "last_name"]
+        extra_kwargs = {
+            "email": {"required": False, "allow_blank": True},
+            "first_name": {"required": False, "allow_blank": True},
+            "last_name": {"required": False, "allow_blank": True},
+        }
 
     def validate(self, attrs):
-        event = attrs.get("event")
-        if not event:
-            return attrs
-        request = self.context.get("request")
-        user = getattr(request, "user", None) if request else None
-        if not event.is_public and (not user or not user.is_authenticated):
-            raise serializers.ValidationError("Событие недоступно для записи.")
-
-        email = attrs.get("email")
-        if email and Registration.objects.filter(event=event, email__iexact=email).exists():
-            raise serializers.ValidationError({"email": "Этот email уже зарегистрирован на событие."})
-
-        if event.capacity is not None:
-            current = Registration.objects.filter(event=event).count()
-            if current >= event.capacity:
-                raise serializers.ValidationError("Свободных мест больше нет.")
+        if attrs["password"] != attrs["password_confirm"]:
+            raise serializers.ValidationError({"password_confirm": "Пароли не совпадают."})
         return attrs
+
+    def validate_username(self, value):
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("Пользователь с таким именем уже существует.")
+        return value
+
+    def validate_email(self, value):
+        if value and User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError("Пользователь с таким email уже существует.")
+        return value
+
+    def create(self, validated_data):
+        validated_data.pop("password_confirm")
+        password = validated_data.pop("password")
+        return User.objects.create_user(password=password, **validated_data)
+
+
+class UserBriefSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "username", "first_name", "last_name"]
+
+
+class RegistrationSerializer(serializers.ModelSerializer):
+    user = UserBriefSerializer(read_only=True)
+
+    class Meta:
+        model = Registration
+        fields = ["id", "event", "user", "comment", "created_at"]
+        read_only_fields = ["id", "event", "user", "created_at"]
 
 
 class EventSerializer(serializers.ModelSerializer):
     registrations_count = serializers.IntegerField(read_only=True)
+    organizer = UserBriefSerializer(read_only=True)
 
     def validate(self, attrs):
         if self.instance:
@@ -47,6 +74,7 @@ class EventSerializer(serializers.ModelSerializer):
         model = Event
         fields = [
             "id",
+            "organizer",
             "title",
             "description",
             "location",
@@ -58,5 +86,4 @@ class EventSerializer(serializers.ModelSerializer):
             "updated_at",
             "registrations_count",
         ]
-        read_only_fields = ["id", "created_at", "updated_at", "registrations_count"]
-
+        read_only_fields = ["id", "organizer", "created_at", "updated_at", "registrations_count"]

@@ -1,43 +1,39 @@
 from django import forms
 
-from .models import Registration
+from .models import Event
 
 
-class RegistrationForm(forms.ModelForm):
-    def __init__(self, *args, event=None, **kwargs):
-        self.event = event
-        super().__init__(*args, **kwargs)
-
+class EventForm(forms.ModelForm):
     class Meta:
-        model = Registration
-        fields = ["name", "email", "comment"]
+        model = Event
+        fields = ["title", "description", "location", "starts_at", "ends_at", "capacity", "is_public"]
         widgets = {
-            "name": forms.TextInput(attrs={"placeholder": "Имя", "autocomplete": "name"}),
-            "email": forms.EmailInput(attrs={"placeholder": "Email", "autocomplete": "email"}),
-            "comment": forms.Textarea(attrs={"rows": 3, "placeholder": "Комментарий (необязательно)"}),
+            "title": forms.TextInput(attrs={"placeholder": "Название"}),
+            "description": forms.Textarea(attrs={"rows": 5, "placeholder": "Описание"}),
+            "location": forms.TextInput(attrs={"placeholder": "Место или ссылка"}),
+            "starts_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "ends_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "capacity": forms.NumberInput(attrs={"min": 1, "placeholder": "Без лимита — оставьте пустым"}),
         }
-
-    def clean_email(self):
-        email = self.cleaned_data.get("email")
-        if not self.event or not email:
-            return email
-        if Registration.objects.filter(event=self.event, email__iexact=email).exists():
-            raise forms.ValidationError("Этот email уже зарегистрирован на это событие.")
-        return email
+        help_texts = {
+            "starts_at": "Удобнее выбрать дату и время встроенным календарём браузера.",
+            "ends_at": "Необязательно.",
+            "capacity": "Пусто — без ограничения по числу участников.",
+            "is_public": "Если выключено, карточку видите только вы (и список «Мои»).",
+        }
 
     def clean(self):
         cleaned = super().clean()
-        if not self.event:
-            return cleaned
-        if self.event.capacity is not None:
-            n = self.event.registrations.count()
-            if n >= self.event.capacity:
-                raise forms.ValidationError("Свободных мест больше нет.")
+        starts = cleaned.get("starts_at")
+        ends = cleaned.get("ends_at")
+        if starts and ends and ends < starts:
+            raise forms.ValidationError("Время окончания не может быть раньше начала.")
         return cleaned
 
-    def save(self, commit=True):
-        obj = super().save(commit=False)
-        obj.event = self.event
-        if commit:
-            obj.save()
-        return obj
+
+class RegistrationCommentForm(forms.Form):
+    comment = forms.CharField(
+        required=False,
+        label="Комментарий",
+        widget=forms.Textarea(attrs={"rows": 3, "placeholder": "Необязательно"}),
+    )

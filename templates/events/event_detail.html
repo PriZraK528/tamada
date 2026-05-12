@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ event.title }} — Tamada{% endblock %}
+{% block title %}{{ event.title }} — TamaDa{% endblock %}
 {% block content %}
   <p class="muted" style="margin: 0 0 0.25rem"><a href="{% url 'event_list' %}">← Все события</a></p>
   <h1>{{ event.title }}</h1>
@@ -7,8 +7,13 @@
     {{ event.starts_at|date:"d.m.Y H:i" }}
     {% if event.ends_at %}— {{ event.ends_at|date:"d.m.Y H:i" }}{% endif %}
     {% if event.location %}· {{ event.location }}{% endif %}
+    · организатор: {{ event.organizer.get_username }}
     {% if event.registrations_count is not None %}· записано: {{ event.registrations_count }}{% if event.capacity is not None %}/{{ event.capacity }}{% endif %}{% endif %}
+    {% if not event.is_public %}· <span class="muted">не публичное</span>{% endif %}
   </p>
+  {% if user.is_authenticated and user.id == event.organizer_id %}
+    <p style="margin-top: 0"><a class="btn" href="{% url 'event_edit' event.pk %}">Редактировать</a></p>
+  {% endif %}
   {% if event.description %}
     <div class="card prose" style="margin-bottom: 1.25rem">{{ event.description }}</div>
   {% endif %}
@@ -22,20 +27,34 @@
   {% endif %}
 
   <section class="card">
-    <h2 style="margin-top: 0; font-size: 1.05rem">Запись на событие</h2>
-    <form method="post" novalidate>
-      {% csrf_token %}
-      {% if form.non_field_errors %}
-        <ul class="errorlist">{% for err in form.non_field_errors %}<li>{{ err }}</li>{% endfor %}</ul>
-      {% endif %}
-      {% for field in form %}
-        <p>
-          {{ field.label_tag }}
-          {{ field }}
-          {% if field.errors %}<ul class="errorlist">{% for err in field.errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
-        </p>
-      {% endfor %}
-      <button class="btn btn-primary" type="submit">Записаться</button>
-    </form>
+    <h2 style="margin-top: 0; font-size: 1.05rem">Участие</h2>
+    {% if not user.is_authenticated %}
+      <p class="muted" style="margin: 0">
+        <a href="{% url 'login' %}?next={{ request.path|urlencode }}">Войдите</a>, чтобы записаться на событие.
+      </p>
+    {% elif registered %}
+      <p style="margin: 0 0 1rem">Вы записаны на это событие.</p>
+      <form method="post" action="{% url 'event_leave' event.pk %}">
+        {% csrf_token %}
+        <button class="btn" type="submit">Отменить запись</button>
+      </form>
+    {% elif user.id == event.organizer_id %}
+      <p class="muted" style="margin: 0">Вы организатор этого события.</p>
+    {% else %}
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+          <ul class="errorlist">{% for err in form.non_field_errors %}<li>{{ err }}</li>{% endfor %}</ul>
+        {% endif %}
+        {% for field in form %}
+          <p>
+            {{ field.label_tag }}
+            {{ field }}
+            {% if field.errors %}<ul class="errorlist">{% for err in field.errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
+          </p>
+        {% endfor %}
+        <button class="btn btn-primary" type="submit">Записаться</button>
+      </form>
+    {% endif %}
   </section>
 {% endblock %}
