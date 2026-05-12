@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}События — Tamada{% endblock %}
+{% block content %}
+  <h1>События и встречи</h1>
+  <p class="lead">Публичный каталог. Запись на странице события.</p>
+  {% if events %}
+    <div class="grid cols-2">
+      {% for e in events %}
+        <article class="card">
+          <h2><a href="{% url 'event_detail' e.pk %}">{{ e.title }}</a></h2>
+          <p class="meta">
+            {{ e.starts_at|date:"d.m.Y H:i" }}
+            {% if e.location %}· {{ e.location }}{% endif %}
+            {% if e.registrations_count is not None %}· записано: {{ e.registrations_count }}{% if e.capacity is not None %}/{{ e.capacity }}{% endif %}{% endif %}
+          </p>
+          {% if e.description %}
+            <p class="muted" style="margin: 0; font-size: 0.9rem">{{ e.description|truncatewords:28 }}</p>
+          {% endif %}
+          <p style="margin: 1rem 0 0">
+            <a class="btn btn-primary" href="{% url 'event_detail' e.pk %}">Подробнее</a>
+          </p>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">Пока нет опубликованных событий.</p>
+  {% endif %}
+{% endblock %}

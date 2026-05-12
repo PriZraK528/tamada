@@ -29,7 +29,12 @@ class Registration(models.Model):
 
     class Meta:
         ordering = ["-created_at", "id"]
-        unique_together = [("event", "email")]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["event", "email"],
+                name="uniq_registration_event_email",
+            ),
+        ]
 
     def __str__(self) -> str:
         return f"{self.email} -> {self.event_id}"

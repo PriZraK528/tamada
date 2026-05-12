@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ event.title }} — Tamada{% endblock %}
+{% block content %}
+  <p class="muted" style="margin: 0 0 0.25rem"><a href="{% url 'event_list' %}">← Все события</a></p>
+  <h1>{{ event.title }}</h1>
+  <p class="meta">
+    {{ event.starts_at|date:"d.m.Y H:i" }}
+    {% if event.ends_at %}— {{ event.ends_at|date:"d.m.Y H:i" }}{% endif %}
+    {% if event.location %}· {{ event.location }}{% endif %}
+    {% if event.registrations_count is not None %}· записано: {{ event.registrations_count }}{% if event.capacity is not None %}/{{ event.capacity }}{% endif %}{% endif %}
+  </p>
+  {% if event.description %}
+    <div class="card prose" style="margin-bottom: 1.25rem">{{ event.description }}</div>
+  {% endif %}
+
+  {% if messages %}
+    <ul class="messages">
+      {% for message in messages %}
+        <li class="{{ message.tags }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <section class="card">
+    <h2 style="margin-top: 0; font-size: 1.05rem">Запись на событие</h2>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <ul class="errorlist">{% for err in form.non_field_errors %}<li>{{ err }}</li>{% endfor %}</ul>
+      {% endif %}
+      {% for field in form %}
+        <p>
+          {{ field.label_tag }}
+          {{ field }}
+          {% if field.errors %}<ul class="errorlist">{% for err in field.errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
+        </p>
+      {% endfor %}
+      <button class="btn btn-primary" type="submit">Записаться</button>
+    </form>
+  </section>
+{% endblock %}
