@@ -93,6 +93,30 @@ def event_detail(request, pk):
                             messages.error(request, err)
             return redirect("event_detail", pk=event.pk)
 
+        if request.POST.get("revoke_invitation"):
+            if event.organizer_id != request.user.id:
+                messages.error(request, "Только организатор может отзывать приглашения.")
+            else:
+                raw_id = request.POST.get("invitation_id")
+                try:
+                    inv_pk = int(raw_id)
+                except (TypeError, ValueError):
+                    messages.error(request, "Некорректный идентификатор приглашения.")
+                else:
+                    inv = Invitation.objects.filter(pk=inv_pk, event=event).first()
+                    if not inv:
+                        messages.error(request, "Приглашение не найдено.")
+                    elif inv.status != Invitation.Status.PENDING:
+                        messages.warning(
+                            request,
+                            "Отозвать можно только приглашение в статусе «ожидает ответа».",
+                        )
+                    else:
+                        inv.status = Invitation.Status.REVOKED
+                        inv.save(update_fields=["status"])
+                        messages.success(request, "Приглашение отозвано.")
+            return redirect("event_detail", pk=event.pk)
+
         if registered:
             messages.warning(request, "Вы уже записаны на это событие.")
             form = RegistrationCommentForm()

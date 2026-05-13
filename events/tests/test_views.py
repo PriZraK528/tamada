@@ -64,3 +64,16 @@ class EventDetailViewTests(TestCase):
     def test_private_event_hidden_from_anonymous(self):
         r = self.client.get(reverse("event_detail", kwargs={"pk": self.private_ev.pk}))
         self.assertEqual(r.status_code, 404)
+
+    def test_organizer_revokes_pending_invitation(self):
+        self.client.force_login(self.organizer)
+        inv = create_or_refresh_invitation(self.public_ev, "guest@example.com")
+        url = reverse("event_detail", kwargs={"pk": self.public_ev.pk})
+        r = self.client.post(
+            url,
+            {"revoke_invitation": "1", "invitation_id": str(inv.pk)},
+            follow=False,
+        )
+        self.assertEqual(r.status_code, 302)
+        inv.refresh_from_db()
+        self.assertEqual(inv.status, Invitation.Status.REVOKED)

@@ -64,6 +64,16 @@
                     style="width: 100%; max-width: 36rem; margin-top: 0.2rem"
                   />
                 </div>
+                <form
+                  method="post"
+                  class="invite-revoke-form"
+                  style="margin-top: 0.5rem"
+                  onsubmit="return confirm('Отозвать приглашение для {{ inv.email|escapejs }}? Ссылка перестанет действовать.');"
+                >
+                  {% csrf_token %}
+                  <input type="hidden" name="invitation_id" value="{{ inv.pk }}" />
+                  <button type="submit" name="revoke_invitation" value="1" class="btn btn-danger">Отозвать приглашение</button>
+                </form>
               {% endif %}
             </li>
           {% endfor %}
