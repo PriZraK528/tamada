@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Вход — TamaDa{% endblock %}
 {% block content %}
+  <a class="page-back muted" href="{% url 'event_list' %}">← Все события</a>
   <h1>Вход</h1>
   <p class="lead">Войдите, чтобы создавать события и записываться на них.</p>
-  <section class="card" style="max-width: 420px">
+  <section class="card auth-card">
     <form method="post" action="{% url 'login' %}">
       {% csrf_token %}
       {% if form.non_field_errors %}

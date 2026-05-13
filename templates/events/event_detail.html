@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ event.title }} — TamaDa{% endblock %}
 {% block content %}
-  <p class="muted" style="margin: 0 0 0.25rem"><a href="{% url 'event_list' %}">← Все события</a></p>
+  <a class="page-back muted" href="{% url 'event_list' %}">← Все события</a>
   <h1>{{ event.title }}</h1>
   <p class="meta">
     {{ event.starts_at|date:"d.m.Y H:i" }}
@@ -24,6 +24,52 @@
         <button type="submit" class="btn btn-danger">Удалить</button>
       </form>
     </div>
+  {% endif %}
+  {% if user.is_authenticated and user.id == event.organizer_id and invitations is not None %}
+    <section class="card" style="margin-bottom: 1.25rem">
+      <h2 style="margin-top: 0; font-size: 1.05rem">Приглашения по email</h2>
+      <p class="muted" style="margin: 0 0 1rem">
+        Гость открывает ссылку, входит в аккаунт с тем же email и подтверждает участие.
+      </p>
+      <form method="post" class="invite-form">
+        {% csrf_token %}
+        {% if invite_form.non_field_errors %}
+          <ul class="errorlist">{% for err in invite_form.non_field_errors %}<li>{{ err }}</li>{% endfor %}</ul>
+        {% endif %}
+        <p style="margin-bottom: 0.75rem">
+          {{ invite_form.email.label_tag }}
+          {{ invite_form.email }}
+          {% if invite_form.email.errors %}
+            <ul class="errorlist">{% for err in invite_form.email.errors %}<li>{{ err }}</li>{% endfor %}</ul>
+          {% endif %}
+        </p>
+        <button type="submit" class="btn btn-primary" name="send_invite" value="1">Создать ссылку-приглашение</button>
+      </form>
+      {% if invitations %}
+        <ul class="invitation-list" style="margin: 1.25rem 0 0; padding-left: 1.25rem">
+          {% for inv in invitations %}
+            <li style="margin-bottom: 0.75rem">
+              <strong>{{ inv.email }}</strong>
+              — {{ inv.get_status_display }}
+              {% if inv.status == "pending" %}
+                {% url "invitation_accept" inv.token as accept_path %}
+                <div style="margin-top: 0.35rem">
+                  <span class="muted" style="display: block; font-size: 0.85rem">Ссылка для гостя</span>
+                  <input
+                    type="text"
+                    readonly
+                    class="invite-link-input"
+                    value="{{ request.scheme }}://{{ request.get_host }}{{ accept_path }}"
+                    onclick="this.select()"
+                    style="width: 100%; max-width: 36rem; margin-top: 0.2rem"
+                  />
+                </div>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </section>
   {% endif %}
   {% if event.description %}
     <div class="card prose" style="margin-bottom: 1.25rem">{{ event.description }}</div>

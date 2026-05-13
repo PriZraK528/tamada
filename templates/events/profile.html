@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Профиль — TamaDa{% endblock %}
 {% block content %}
+  <a class="page-back muted" href="{% url 'event_list' %}">← Все события</a>
   <h1>Профиль</h1>
   <p class="lead">{{ user.username }}{% if user.get_full_name %} · {{ user.get_full_name }}{% endif %}{% if user.email %} · {{ user.email }}{% endif %}</p>
 

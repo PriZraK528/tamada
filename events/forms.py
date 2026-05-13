@@ -169,6 +169,18 @@ class EventForm(forms.ModelForm):
         return obj
 
 
+class InvitationEmailForm(forms.Form):
+    email = forms.EmailField(
+        label="Email приглашённого",
+        widget=forms.EmailInput(
+            attrs={
+                "placeholder": "guest@example.com",
+                "autocomplete": "email",
+            }
+        ),
+    )
+
+
 class RegistrationCommentForm(forms.Form):
     comment = forms.CharField(
         required=False,

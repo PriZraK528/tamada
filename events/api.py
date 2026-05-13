@@ -3,16 +3,22 @@ from datetime import datetime, time
 from django.db.models import Count, Q
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
-from rest_framework import generics, status, viewsets
+from rest_framework import generics, mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import Event, Registration
+from .models import Event, Invitation, Registration
 from .permissions import IsOrganizerOrReadOnly
-from .serializers import EventSerializer, RegisterSerializer, RegistrationSerializer, UserBriefSerializer
+from .serializers import (
+    EventSerializer,
+    InvitationSerializer,
+    RegisterSerializer,
+    RegistrationSerializer,
+    UserBriefSerializer,
+)
 
 
 class RegisterView(generics.CreateAPIView):
@@ -55,7 +61,8 @@ class EventViewSet(viewsets.ModelViewSet):
         qs = Event.objects.annotate(registrations_count=Count("registrations")).select_related("organizer")
         user = self.request.user
         if user.is_authenticated:
-            qs = qs.filter(Q(is_public=True) | Q(organizer=user))
+            my_reg_event_ids = Registration.objects.filter(user=user).values_list("event_id", flat=True)
+            qs = qs.filter(Q(is_public=True) | Q(organizer=user) | Q(pk__in=my_reg_event_ids))
         else:
             qs = qs.filter(is_public=True)
 
@@ -99,6 +106,34 @@ class EventViewSet(viewsets.ModelViewSet):
         if not deleted:
             raise ValidationError({"detail": "Вы не были записаны на это событие."})
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=["get", "post"], permission_classes=[IsAuthenticated], url_path="invitations")
+    def invitations(self, request, pk=None):
+        event = self.get_object()
+        if event.organizer_id != request.user.id:
+            raise PermissionDenied()
+        if request.method == "GET":
+            qs = Invitation.objects.filter(event=event).order_by("-created_at")
+            return Response(InvitationSerializer(qs, many=True, context={"request": request}).data)
+        ser = InvitationSerializer(data=request.data, context={"request": request, "event": event})
+        ser.is_valid(raise_exception=True)
+        inv = ser.save()
+        return Response(InvitationSerializer(inv, context={"request": request}).data, status=status.HTTP_201_CREATED)
+
+
+class InvitationViewSet(mixins.DestroyModelMixin, viewsets.GenericViewSet):
+    """Отзыв приглашения (DELETE) — только организатор события."""
+
+    serializer_class = InvitationSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = Invitation.objects.select_related("event")
+
+    def get_queryset(self):
+        return Invitation.objects.filter(event__organizer=self.request.user)
+
+    def perform_destroy(self, instance):
+        instance.status = Invitation.Status.REVOKED
+        instance.save(update_fields=["status"])
 
 
 class MeEventsList(generics.ListAPIView):

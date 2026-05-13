@@ -141,6 +141,27 @@ main h1 {
   color: var(--muted);
 }
 
+/* Ссылка «← Все события» и отступы после неё — одинаково на всех страницах */
+.wrap > .page-back {
+  display: inline-block;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  margin: 1.75rem 0 0.45rem;
+}
+
+.wrap > .page-back + h1 {
+  margin-top: 0;
+}
+
+.wrap > .page-back + .event-form-page > h1:first-of-type {
+  margin-top: 0;
+}
+
+.auth-card {
+  max-width: 26rem;
+  margin-inline: auto;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -476,4 +497,79 @@ form textarea:focus {
 .event-delete-form-inline {
   margin: 0;
   display: inline;
+}
+
+/* Страница приглашения по ссылке */
+.invite-page {
+  max-width: 28rem;
+  margin: 0 auto;
+}
+
+.invite-page__card {
+  padding: 1.1rem 1.2rem 1.15rem;
+}
+
+.invite-page__for-line {
+  margin: 0 0 0.4rem;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.invite-page__email {
+  font-weight: 600;
+  color: var(--accent-hover);
+  word-break: break-all;
+}
+
+.invite-page .invite-page__title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  margin: 0 0 0.3rem;
+  color: var(--text);
+}
+
+.invite-page__meta {
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.8125rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.invite-page__messages {
+  margin-bottom: 0.65rem !important;
+}
+
+.invite-page__hint {
+  margin: 0 0 0.8rem;
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.45;
+}
+
+.invite-page__session {
+  margin: 0 0 0.65rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.invite-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.6rem;
+}
+
+.invite-page__divider {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.invite-page__form {
+  margin: 0;
 }

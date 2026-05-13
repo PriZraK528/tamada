@@ -1,11 +1,15 @@
 {% extends "base.html" %}
 {% block title %}Регистрация — TamaDa{% endblock %}
 {% block content %}
+  <a class="page-back muted" href="{% url 'event_list' %}">← Все события</a>
   <h1>Регистрация</h1>
   <p class="lead">Создайте аккаунт, чтобы создавать события и записываться на них.</p>
-  <section class="card" style="max-width: 480px">
+  <section class="card auth-card">
     <form method="post" action="{% url 'signup' %}" novalidate>
       {% csrf_token %}
+      {% if next %}
+        <input type="hidden" name="next" value="{{ next }}" />
+      {% endif %}
       {% if submitted and serializer.errors.non_field_errors %}
         <ul class="errorlist">
           {% for err in serializer.errors.non_field_errors %}<li>{{ err }}</li>{% endfor %}

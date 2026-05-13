@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Приглашение — {{ event.title }} — TamaDa{% endblock %}
+{% block content %}
+  <a class="page-back muted" href="{% url 'event_list' %}">← Все события</a>
+  <div class="invite-page">
+    <article class="card invite-page__card">
+      <p class="invite-page__for-line">
+        Приглашение для <span class="invite-page__email">{{ invitation.email }}</span>
+      </p>
+      <h1 class="invite-page__title">{{ event.title }}</h1>
+      <p class="invite-page__meta">
+        {{ event.starts_at|date:"d.m.Y H:i" }}{% if event.location %} · {{ event.location }}{% endif %}
+      </p>
+
+      {% if messages %}
+        <ul class="messages invite-page__messages">
+          {% for message in messages %}
+            <li class="{{ message.tags }}">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      <p class="invite-page__hint">
+        {% if user.is_authenticated %}
+          Email в профиле должен совпадать с приглашением — тогда запись подтверждается кнопкой ниже.
+        {% else %}
+          Войдите или зарегистрируйтесь с тем же email, что в приглашении, затем откройте эту страницу снова.
+        {% endif %}
+      </p>
+
+      {% if not user.is_authenticated %}
+        <div class="invite-page__actions">
+          <a class="btn btn-primary" href="{% url 'login' %}?next={{ login_next|urlencode }}">Войти</a>
+          <span class="invite-page__divider">или</span>
+          <a class="btn" href="{% url 'signup' %}?next={{ login_next|urlencode }}">Регистрация</a>
+        </div>
+      {% else %}
+        <p class="invite-page__session">
+          Сейчас вы вошли как <strong>{{ user.get_username }}</strong>{% if user.email %}
+            · email в профиле: <strong>{{ user.email }}</strong>{% else %} · <span class="muted">в профиле не указан email</span>{% endif %}
+        </p>
+        <form class="invite-page__form" method="post">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-primary">Принять приглашение и записаться</button>
+        </form>
+      {% endif %}
+    </article>
+  </div>
+{% endblock %}

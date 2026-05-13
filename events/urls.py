@@ -4,6 +4,7 @@ from . import views
 
 urlpatterns = [
     path("", views.event_list, name="event_list"),
+    path("invitations/<str:token>/", views.invitation_accept, name="invitation_accept"),
     path("events/create/", views.event_create, name="event_create"),
     path("profile/", views.profile, name="profile"),
     path("events/<int:pk>/", views.event_detail, name="event_detail"),

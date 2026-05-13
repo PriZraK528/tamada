@@ -1,7 +1,10 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.urls import reverse
 from rest_framework import serializers
 
-from .models import Event, Registration
+from .invitations import create_or_refresh_invitation
+from .models import Event, Invitation, Registration
 
 User = get_user_model()
 
@@ -53,6 +56,32 @@ class RegistrationSerializer(serializers.ModelSerializer):
         model = Registration
         fields = ["id", "event", "user", "comment", "created_at"]
         read_only_fields = ["id", "event", "user", "created_at"]
+
+
+class InvitationSerializer(serializers.ModelSerializer):
+    accept_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Invitation
+        fields = ["id", "event", "email", "token", "status", "created_at", "accept_url"]
+        read_only_fields = ["id", "event", "token", "status", "created_at", "accept_url"]
+
+    def get_accept_url(self, obj):
+        request = self.context.get("request")
+        if not request:
+            return ""
+        path = reverse("invitation_accept", kwargs={"token": obj.token})
+        return request.build_absolute_uri(path)
+
+    def validate_email(self, value):
+        return value.strip().lower()
+
+    def create(self, validated_data):
+        event = self.context["event"]
+        try:
+            return create_or_refresh_invitation(event, validated_data["email"])
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"email": list(exc.messages)}) from exc
 
 
 class EventSerializer(serializers.ModelSerializer):

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Ссылка недействительна — TamaDa{% endblock %}
+{% block content %}
+  <a class="page-back muted" href="{% url 'event_list' %}">← Все события</a>
+  <h1>Ссылка больше не действует</h1>
+  <div class="card prose">
+    <p style="margin-top: 0">
+      Приглашение на событие «{{ event.title }}» для {{ invitation.email }} имеет статус
+      «{{ invitation.get_status_display }}». Для новой ссылки обратитесь к организатору.
+    </p>
+  </div>
+{% endblock %}
