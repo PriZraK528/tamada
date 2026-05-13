@@ -141,7 +141,6 @@ main h1 {
   color: var(--muted);
 }
 
-/* Ссылка «← Все события» и отступы после неё — одинаково на всех страницах */
 .wrap > .page-back {
   display: inline-block;
   font-size: 0.875rem;
@@ -499,7 +498,6 @@ form textarea:focus {
   display: inline;
 }
 
-/* Страница приглашения по ссылке */
 .invite-page {
   max-width: 28rem;
   margin: 0 auto;

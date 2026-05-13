@@ -13,24 +13,21 @@ dist/
 build/
 *.egg-info/
 
-# Virtual environments
 .venv/
 venv/
 ENV/
 env/
 
-# Django
 *.log
 db.sqlite3
 db.sqlite3-journal
 staticfiles/
 media/
 
-# Environment variables
 .env
-.env.*
+.env.local
+.env.*.local
 
-# Editors / OS
 .vscode/
 .idea/
 .DS_Store

@@ -50,6 +50,5 @@ class CreateOrRefreshInvitationTests(TestCase):
     def test_when_organizer_has_no_email_guest_can_be_invited(self):
         org = user("noemail", email="")
         ev = event(org)
-        # правило только если у организатора указан email
         inv = create_or_refresh_invitation(ev, "any@example.com")
         self.assertEqual(inv.email, "any@example.com")

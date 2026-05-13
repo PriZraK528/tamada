@@ -28,7 +28,6 @@ def forwards_assign_organizer_and_user(apps, schema_editor):
 
     Registration.objects.filter(user_id__isnull=True).delete()
 
-    # remove duplicate (event, user), keep smallest id
     seen = set()
     for reg in Registration.objects.order_by("pk"):
         key = (reg.event_id, reg.user_id)
