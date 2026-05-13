@@ -1,30 +1,103 @@
 {% extends "base.html" %}
 {% block title %}{{ title_page }} — TamaDa{% endblock %}
 {% block content %}
-  <p class="muted" style="margin: 0 0 0.25rem"><a href="{% url 'event_list' %}">← События</a></p>
-  <h1>{{ title_page }}</h1>
-  {% if messages %}
-    <ul class="messages">
-      {% for message in messages %}
-        <li class="{{ message.tags }}">{{ message }}</li>
-      {% endfor %}
-    </ul>
-  {% endif %}
-  <section class="card">
-    <form method="post" novalidate>
-      {% csrf_token %}
-      {% if form.non_field_errors %}
-        <ul class="errorlist">{% for err in form.non_field_errors %}<li>{{ err }}</li>{% endfor %}</ul>
+  <div class="event-form-page">
+    <p class="muted" style="margin: 0 0 0.25rem"><a href="{% url 'event_list' %}">← Все события</a></p>
+    <h1>{{ title_page }}</h1>
+    {% if event %}
+      <p class="lead">Измените данные события и сохраните. Участники увидят обновления на странице события.</p>
+    {% else %}
+      <p class="lead">Заполните поля ниже: название, время и видимость. Описание и место помогут участникам лучше подготовиться.</p>
+    {% endif %}
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li class="{{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    <section class="card event-form-card">
+      <form method="post" novalidate class="event-form">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+          <ul class="errorlist">{% for err in form.non_field_errors %}<li>{{ err }}</li>{% endfor %}</ul>
+        {% endif %}
+
+        <h2 class="form-section-title">Основное</h2>
+        {% for field in form %}
+          {% if field.name == "title" or field.name == "description" or field.name == "location" %}
+            <div class="form-row">
+              {{ field.label_tag }}
+              {{ field }}
+              {% if field.help_text %}<p class="field-help">{{ field.help_text }}</p>{% endif %}
+              {% if field.errors %}<ul class="errorlist">{% for err in field.errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+          {% endif %}
+        {% endfor %}
+
+        <h2 class="form-section-title">Время</h2>
+        <div class="form-row-grid">
+          {% for field in form %}
+            {% if field.name == "starts_at" or field.name == "ends_at" %}
+              <div class="form-row">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}<p class="field-help">{{ field.help_text }}</p>{% endif %}
+                {% if field.errors %}<ul class="errorlist">{% for err in field.errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+
+        <h2 class="form-section-title">Участники</h2>
+        {% for field in form %}
+          {% if field.name == "capacity" %}
+            <div class="form-row">
+              {{ field.label_tag }}
+              {{ field }}
+              {% if field.help_text %}<p class="field-help">{{ field.help_text }}</p>{% endif %}
+              {% if field.errors %}<ul class="errorlist">{% for err in field.errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+          {% endif %}
+        {% endfor %}
+
+        <h2 class="form-section-title">Видимость</h2>
+        {% for field in form %}
+          {% if field.name == "visibility" %}
+            <div class="form-row form-row-visibility">
+              {{ field.label_tag }}
+              {% if field.help_text %}<p class="field-help field-help-tight">{{ field.help_text }}</p>{% endif %}
+              <div class="visibility-radios-wrap">
+                {{ field }}
+              </div>
+              {% if field.errors %}<ul class="errorlist">{% for err in field.errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+          {% endif %}
+        {% endfor %}
+
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit">
+            {% if event %}Сохранить изменения{% else %}Создать событие{% endif %}
+          </button>
+          <a class="btn" href="{% if event %}{% url 'event_detail' event.pk %}{% else %}{% url 'event_list' %}{% endif %}">Отмена</a>
+        </div>
+      </form>
+
+      {% if event %}
+        <div class="event-form-danger-zone">
+          <h2 class="form-section-title form-section-title-danger">Удаление события</h2>
+          <p class="field-help" style="margin: 0 0 0.75rem">Действие необратимо: карточка исчезнет, все записи участников будут удалены.</p>
+          <form
+            method="post"
+            action="{% url 'event_delete' event.pk %}"
+            class="event-delete-form"
+            onsubmit="return confirm('Удалить событие «{{ event.title|escapejs }}»? Это нельзя отменить.');"
+          >
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Удалить событие</button>
+          </form>
+        </div>
       {% endif %}
-      {% for field in form %}
-        <p>
-          {{ field.label_tag }}
-          {{ field }}
-          {% if field.help_text %}<span class="muted" style="font-size: 0.8rem">{{ field.help_text }}</span>{% endif %}
-          {% if field.errors %}<ul class="errorlist">{% for err in field.errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
-        </p>
-      {% endfor %}
-      <button class="btn btn-primary" type="submit">Сохранить</button>
-    </form>
-  </section>
+    </section>
+  </div>
 {% endblock %}

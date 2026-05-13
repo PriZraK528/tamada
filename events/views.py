@@ -105,7 +105,7 @@ def event_create(request):
             return redirect("event_detail", pk=ev.pk)
     else:
         form = EventForm()
-    return render(request, "events/event_form.html", {"form": form, "title_page": "Новое событие"})
+    return render(request, "events/event_form.html", {"form": form, "title_page": "Создать событие"})
 
 
 @login_required
@@ -122,8 +122,19 @@ def event_edit(request, pk):
     return render(
         request,
         "events/event_form.html",
-        {"form": form, "title_page": "Редактирование события", "event": event},
+        {"form": form, "title_page": "Редактировать событие", "event": event},
     )
+
+
+@login_required
+def event_delete(request, pk):
+    event = get_object_or_404(Event, pk=pk, organizer=request.user)
+    if request.method != "POST":
+        return redirect("event_edit", pk=pk)
+    title = event.title
+    event.delete()
+    messages.success(request, f"Событие «{title}» удалено.")
+    return redirect("event_list")
 
 
 @login_required
