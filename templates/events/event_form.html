@@ -36,9 +36,9 @@
         {% endfor %}
 
         <h2 class="form-section-title">Время</h2>
-        <div class="form-row-grid">
+        <div class="form-row-grid form-row-grid-datetime">
           {% for field in form %}
-            {% if field.name == "starts_at" or field.name == "ends_at" %}
+            {% if field.name == "starts_date" or field.name == "starts_time" or field.name == "ends_date" or field.name == "ends_time" %}
               <div class="form-row">
                 {{ field.label_tag }}
                 {{ field }}

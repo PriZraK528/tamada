@@ -1,15 +1,25 @@
+from datetime import datetime
+
 from django import forms
+from django.conf import settings
+from django.utils import timezone
 
 from .models import Event
-from .widgets import DateTimeLocalInput
 
-_DATETIME_LOCAL_FORMATS = [
-    "%Y-%m-%dT%H:%M",
-    "%Y-%m-%dT%H:%M:%S",
-    "%Y-%m-%d %H:%M:%S",
-    "%d.%m.%Y %H:%M:%S",
-    "%d.%m.%Y %H:%M",
-]
+
+def _combine_local_date_time(d, t):
+    naive = datetime.combine(d, t)
+    if settings.USE_TZ:
+        return timezone.make_aware(naive, timezone.get_current_timezone())
+    return naive
+
+
+def _local_date_time_parts(dt):
+    if dt is None:
+        return None, None
+    if settings.USE_TZ and timezone.is_aware(dt):
+        dt = timezone.localtime(dt)
+    return dt.date(), dt.time().replace(second=0, microsecond=0)
 
 
 class EventForm(forms.ModelForm):
@@ -17,6 +27,30 @@ class EventForm(forms.ModelForm):
 
     VIS_PUBLIC = "public"
     VIS_PRIVATE = "private"
+
+    starts_date = forms.DateField(
+        label="Дата начала",
+        widget=forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
+        input_formats=["%Y-%m-%d", "%d.%m.%Y"],
+    )
+    starts_time = forms.TimeField(
+        label="Время начала",
+        widget=forms.TimeInput(format="%H:%M", attrs={"type": "time", "step": "60"}),
+        input_formats=["%H:%M", "%H:%M:%S"],
+    )
+    ends_date = forms.DateField(
+        label="Дата окончания",
+        required=False,
+        widget=forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
+        input_formats=["%Y-%m-%d", "%d.%m.%Y"],
+        help_text="Необязательно. Оставьте пустым вместе с временем окончания, если дата конца не нужна.",
+    )
+    ends_time = forms.TimeField(
+        label="Время окончания",
+        required=False,
+        widget=forms.TimeInput(format="%H:%M", attrs={"type": "time", "step": "60"}),
+        input_formats=["%H:%M", "%H:%M:%S"],
+    )
 
     visibility = forms.ChoiceField(
         label="Видимость в каталоге",
@@ -37,21 +71,17 @@ class EventForm(forms.ModelForm):
 
     class Meta:
         model = Event
-        fields = ["title", "description", "location", "starts_at", "ends_at", "capacity"]
+        fields = ["title", "description", "location", "capacity"]
         labels = {
             "title": "Название",
             "description": "Описание",
             "location": "Место или формат",
-            "starts_at": "Когда начинается",
-            "ends_at": "Когда заканчивается",
             "capacity": "Максимум участников",
         }
         help_texts = {
             "title": "Коротко, чтобы было понятно, о чём событие.",
             "description": "Расскажите подробности: программа, что взять с собой, как связаться с организатором.",
             "location": "Адрес, название площадки или ссылка на онлайн-встречу (Zoom, Google Meet и т.п.).",
-            "starts_at": "Дата и время начала. Удобнее выбрать встроенным календарём браузера.",
-            "ends_at": "Необязательно. Укажите, если известно время окончания.",
             "capacity": "Оставьте пустым, если число гостей не ограничено.",
         }
         widgets = {
@@ -73,8 +103,6 @@ class EventForm(forms.ModelForm):
                     "autocomplete": "street-address",
                 }
             ),
-            "starts_at": DateTimeLocalInput(),
-            "ends_at": DateTimeLocalInput(),
             "capacity": forms.NumberInput(attrs={"min": 1, "placeholder": "Без ограничения — оставьте пустым"}),
         }
 
@@ -82,33 +110,59 @@ class EventForm(forms.ModelForm):
         "title",
         "description",
         "location",
-        "starts_at",
-        "ends_at",
+        "starts_date",
+        "starts_time",
+        "ends_date",
+        "ends_time",
         "capacity",
         "visibility",
     ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for name in ("starts_at", "ends_at"):
-            self.fields[name].input_formats = _DATETIME_LOCAL_FORMATS + list(
-                self.fields[name].input_formats or []
-            )
         if self.instance.pk:
+            if self.instance.starts_at:
+                d, t = _local_date_time_parts(self.instance.starts_at)
+                self.initial["starts_date"] = d
+                self.initial["starts_time"] = t
+                self.fields["starts_date"].initial = d
+                self.fields["starts_time"].initial = t
+            if self.instance.ends_at:
+                d, t = _local_date_time_parts(self.instance.ends_at)
+                self.initial["ends_date"] = d
+                self.initial["ends_time"] = t
+                self.fields["ends_date"].initial = d
+                self.fields["ends_time"].initial = t
             self.fields["visibility"].initial = (
                 self.VIS_PUBLIC if self.instance.is_public else self.VIS_PRIVATE
             )
 
     def clean(self):
         cleaned = super().clean()
-        starts = cleaned.get("starts_at")
-        ends = cleaned.get("ends_at")
-        if starts and ends and ends < starts:
-            raise forms.ValidationError("Время окончания не может быть раньше времени начала.")
+        sd = cleaned.get("starts_date")
+        st = cleaned.get("starts_time")
+        if not sd or not st:
+            raise forms.ValidationError("Укажите дату и время начала события.")
+        cleaned["starts_at"] = _combine_local_date_time(sd, st)
+
+        ed = cleaned.get("ends_date")
+        et = cleaned.get("ends_time")
+        if ed and et:
+            cleaned["ends_at"] = _combine_local_date_time(ed, et)
+            if cleaned["ends_at"] < cleaned["starts_at"]:
+                raise forms.ValidationError("Окончание не может быть раньше начала.")
+        elif not ed and not et:
+            cleaned["ends_at"] = None
+        else:
+            raise forms.ValidationError(
+                "Для окончания заполните и дату, и время, либо оставьте оба поля окончания пустыми."
+            )
         return cleaned
 
     def save(self, commit=True):
         obj = super().save(commit=False)
+        obj.starts_at = self.cleaned_data["starts_at"]
+        obj.ends_at = self.cleaned_data["ends_at"]
         obj.is_public = self.cleaned_data["visibility"] == self.VIS_PUBLIC
         if commit:
             obj.save()

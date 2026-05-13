@@ -397,32 +397,34 @@ form textarea:focus {
   margin-bottom: 0.65rem;
 }
 
-.form-row-grid {
+.form-row-grid,
+.form-row-grid-datetime {
   display: grid;
   gap: 1rem;
 }
 
 @media (min-width: 560px) {
-  .form-row-grid {
+  .form-row-grid,
+  .form-row-grid-datetime {
     grid-template-columns: 1fr 1fr;
   }
 }
 
-.visibility-radios-wrap {
+.visibility-radios-wrap #id_visibility {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 1.25rem;
 }
 
-.visibility-radios-wrap > div {
+.visibility-radios-wrap #id_visibility > div {
   margin: 0;
 }
 
-.visibility-radios-wrap > div:last-child {
+.visibility-radios-wrap #id_visibility > div:last-child {
   margin-bottom: 0;
 }
 
-.visibility-radios-wrap label {
+.visibility-radios-wrap #id_visibility label {
   display: flex;
   align-items: flex-start;
   gap: 0.65rem;
@@ -438,13 +440,13 @@ form textarea:focus {
   transition: border-color 0.2s var(--ease), background 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
 
-.visibility-radios-wrap > div:has(input:checked) label {
+.visibility-radios-wrap #id_visibility > div:has(input:checked) label {
   border-color: var(--accent);
   background: var(--accent-soft);
   box-shadow: 0 0 0 1px rgba(21, 101, 192, 0.12);
 }
 
-.visibility-radios-wrap input[type="radio"] {
+.visibility-radios-wrap #id_visibility input[type="radio"] {
   margin-top: 0.25rem;
   flex-shrink: 0;
   width: 1.1rem;

@@ -131,9 +131,7 @@ def event_delete(request, pk):
     event = get_object_or_404(Event, pk=pk, organizer=request.user)
     if request.method != "POST":
         return redirect("event_edit", pk=pk)
-    title = event.title
     event.delete()
-    messages.success(request, f"Событие «{title}» удалено.")
     return redirect("event_list")
 
 
